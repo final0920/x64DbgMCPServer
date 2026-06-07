@@ -106,6 +106,34 @@ namespace DotNetPlugin
         [EventCallback(Plugins.CBTYPE.CB_BREAKPOINT)]
         public static void Breakpoint(ref Plugins.PLUG_CB_BREAKPOINT info)
         {
+            // === DNF chat capture on 公告CALL (chat-box display chokepoint @ 0x146249100) ===
+            // rdx = message struct; [rdx+8] = pointer to the UTF-16 message text.
+            // Use a non-pausing breakpoint:  bp 0x146249100 ; bpcond 0x146249100,0
+            if ((ulong)info.breakpoint.Value.addr == 0x146249100UL)
+            {
+                try
+                {
+                    nuint contentPtr = Bridge.DbgValFromString("[rdx+8]");
+                    if ((ulong)contentPtr > 0x10000UL)
+                    {
+                        byte[] buf = new byte[256];
+                        if (Bridge.DbgMemRead(contentPtr, buf, (nuint)buf.Length))
+                        {
+                            string s = Encoding.Unicode.GetString(buf);
+                            int nul = s.IndexOf('\0');
+                            if (nul >= 0) s = s.Substring(0, nul);
+                            if (!string.IsNullOrEmpty(s))
+                            {
+                                try { System.IO.File.AppendAllText(@"D:\ms\chat.txt", s + Environment.NewLine); } catch { }
+                                LogInfo("CHAT: " + s);
+                            }
+                        }
+                    }
+                }
+                catch { }
+                return;
+            }
+
             LogInfo($"Breakpoint " + info.breakpoint.Value.addr.ToHexString() + " in " + info.breakpoint.Value.mod);
         }
 
