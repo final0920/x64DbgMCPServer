@@ -139,7 +139,7 @@ namespace DotNetPlugin
                     uint mtype = BitConverter.ToUInt32(st, 0x24);
                     try { System.IO.File.AppendAllText(@"D:\ms\chat_analysis.txt", "+24=" + mtype.ToString("X") + " " + sb.ToString() + "|| " + s + Environment.NewLine); } catch { }
                     // 频道玩家内容白名单: 0x3D=聊天, 0x4E=招募/收徒 ; 0x11/0x1E/0x23=系统公告丢弃
-                    string label = mtype == 0x3Du ? "聊天" : (mtype == 0x4Eu ? "招募" : null);
+                    string label = mtype == 0x3Du ? "聊天" : (mtype == 0x4Eu ? "频道" : null);
                     if (label != null && !string.IsNullOrEmpty(s))
                     {
                         try { System.IO.File.AppendAllText(@"D:\ms\chat.txt", label + "│" + s + Environment.NewLine); } catch { }
