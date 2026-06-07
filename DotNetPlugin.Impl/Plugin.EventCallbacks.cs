@@ -144,6 +144,26 @@ namespace DotNetPlugin
                     {
                         try { System.IO.File.AppendAllText(@"D:\ms\chat.txt", label + "│" + s + Environment.NewLine); } catch { }
                         LogInfo("CHAT[" + label + "]: " + s);
+                        // === 调用方追踪(非暂停): 扫栈找 dnf.exe 范围返回地址 = 调用链 ===
+                        // [rsp]=公告CALL的直接调用方; 更深的是上层分发/网络接收路径
+                        try
+                        {
+                            nuint rsp = Bridge.DbgValFromString("rsp");
+                            byte[] stk = new byte[0x400];
+                            if (Bridge.DbgMemRead(rsp, stk, (nuint)stk.Length))
+                            {
+                                var cs = new StringBuilder();
+                                for (int k = 0; k < stk.Length; k += 8)
+                                {
+                                    ulong v = BitConverter.ToUInt64(stk, k);
+                                    if (v >= 0x140000000UL && v < 0x147000000UL)
+                                        cs.Append("+" + k.ToString("X") + ":" + v.ToString("X") + " ");
+                                }
+                                System.IO.File.AppendAllText(@"D:\ms\chat_trace.txt",
+                                    "[" + label + "] sid=" + BitConverter.ToUInt32(st, 0x14).ToString("X") + " " + s + " ||STK|| " + cs.ToString() + Environment.NewLine);
+                            }
+                        }
+                        catch { }
                     }
                 }
                 catch { }
