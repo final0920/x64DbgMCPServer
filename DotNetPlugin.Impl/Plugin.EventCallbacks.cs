@@ -148,20 +148,25 @@ namespace DotNetPlugin
                         // [rsp]=公告CALL的直接调用方; 更深的是上层分发/网络接收路径
                         try
                         {
+                            // r15 = 公告CALL 调用方里的源消息对象(0x90字节, +0x24类型);rsi=管理器;r14=另一上下文
+                            ulong r15 = (ulong)Bridge.DbgValFromString("r15");
+                            ulong r14 = (ulong)Bridge.DbgValFromString("r14");
+                            ulong rsiReg = (ulong)Bridge.DbgValFromString("rsi");
                             nuint rsp = Bridge.DbgValFromString("rsp");
                             byte[] stk = new byte[0x400];
+                            var cs = new StringBuilder();
                             if (Bridge.DbgMemRead(rsp, stk, (nuint)stk.Length))
                             {
-                                var cs = new StringBuilder();
                                 for (int k = 0; k < stk.Length; k += 8)
                                 {
                                     ulong v = BitConverter.ToUInt64(stk, k);
                                     if (v >= 0x140000000UL && v < 0x147000000UL)
                                         cs.Append("+" + k.ToString("X") + ":" + v.ToString("X") + " ");
                                 }
-                                System.IO.File.AppendAllText(@"D:\ms\chat_trace.txt",
-                                    "[" + label + "] sid=" + BitConverter.ToUInt32(st, 0x14).ToString("X") + " " + s + " ||STK|| " + cs.ToString() + Environment.NewLine);
                             }
+                            System.IO.File.AppendAllText(@"D:\ms\chat_trace.txt",
+                                "[" + label + "] r15=" + r15.ToString("X") + " rsi=" + rsiReg.ToString("X") + " r14=" + r14.ToString("X")
+                                + " sid=" + BitConverter.ToUInt32(st, 0x14).ToString("X") + " | " + s + " ||STK|| " + cs.ToString() + Environment.NewLine);
                         }
                         catch { }
                     }
