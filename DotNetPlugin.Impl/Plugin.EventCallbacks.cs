@@ -113,21 +113,34 @@ namespace DotNetPlugin
             {
                 try
                 {
+                    ulong rcx = (ulong)Bridge.DbgValFromString("rcx");
+                    ulong r8 = (ulong)Bridge.DbgValFromString("r8");
+                    ulong r9 = (ulong)Bridge.DbgValFromString("r9");
+                    nuint rdx = Bridge.DbgValFromString("rdx");
+                    var sb = new StringBuilder();
+                    sb.Append("rcx=" + rcx.ToString("X") + " r8=" + r8.ToString("X") + " r9=" + r9.ToString("X") + " || ");
+                    byte[] st = new byte[48];
+                    if (Bridge.DbgMemRead(rdx, st, (nuint)st.Length))
+                        for (int k = 0; k < st.Length; k += 4)
+                            sb.Append("+" + k.ToString("X2") + ":" + BitConverter.ToUInt32(st, k).ToString("X8") + " ");
+
                     nuint contentPtr = Bridge.DbgValFromString("[rdx+8]");
+                    string s = "";
                     if ((ulong)contentPtr > 0x10000UL)
                     {
                         byte[] buf = new byte[256];
                         if (Bridge.DbgMemRead(contentPtr, buf, (nuint)buf.Length))
                         {
-                            string s = Encoding.Unicode.GetString(buf);
+                            s = Encoding.Unicode.GetString(buf);
                             int nul = s.IndexOf('\0');
                             if (nul >= 0) s = s.Substring(0, nul);
-                            if (!string.IsNullOrEmpty(s))
-                            {
-                                try { System.IO.File.AppendAllText(@"D:\ms\chat.txt", s + Environment.NewLine); } catch { }
-                                LogInfo("CHAT: " + s);
-                            }
                         }
+                    }
+                    try { System.IO.File.AppendAllText(@"D:\ms\chat_analysis.txt", sb.ToString() + "|| " + s + Environment.NewLine); } catch { }
+                    if (!string.IsNullOrEmpty(s))
+                    {
+                        try { System.IO.File.AppendAllText(@"D:\ms\chat.txt", s + Environment.NewLine); } catch { }
+                        LogInfo("CHAT: " + s);
                     }
                 }
                 catch { }
